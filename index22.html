@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prueba de Chi-cuadrado en HTML</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Formulario para ingresar datos -->
+<form id="datosForm">
+  <label for="accionSnacks">Accion Snacks:</label>
+  <input type="number" id="accionSnacks" required>
+
+  <label for="accionNoSnacks">Accion No Snacks:</label>
+  <input type="number" id="accionNoSnacks" required>
+
+  <label for="comediaSnacks">Comedia Snacks:</label>
+  <input type="number" id="comediaSnacks" required>
+
+  <label for="comediaNoSnacks">Comedia No Snacks:</label>
+  <input type="number" id="comediaNoSnacks" required>
+
+  <label for="familiarSnacks">Familiar Snacks:</label>
+  <input type="number" id="familiarSnacks" required>
+
+  <label for="familiarNoSnacks">Familiar No Snacks:</label>
+  <input type="number" id="familiarNoSnacks" required>
+
+  <button type="button" onclick="calcularChiCuadrado()">Calcular</button>
+</form>
+
+
+<!-- Resultados en una tabla -->
+<table id="resultadosTable" style="display: none;">
+  <thead>
+    <tr>
+      <th>Género</th>
+      <th>Snacks</th>
+      <th>No Snacks</th>
+      <th>Frec. Observada</th>
+      <th>Frec. Esperada</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr id="accionRow">
+      <td>Accion</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr id="comediaRow">
+      <td>Comedia</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr id="familiarRow">
+      <td>Familiar</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3">Total:</td>
+      <td id="totalObservado"></td>
+      <td id="totalEsperado"></td>
+    </tr>
+    <tr>
+      <td colspan="5" id="chiCuadradoResult"></td>
+    </tr>
+  </tfoot>
+</table>
+
+<script>
+
+  function calcularChiCuadrado() {
+    // Obtener datos del formulario
+    const accionSnacks = parseInt(document.getElementById('accionSnacks').value);
+    const accionNoSnacks = parseInt(document.getElementById('accionNoSnacks').value);
+    const comediaSnacks = parseInt(document.getElementById('comediaSnacks').value);
+    const comediaNoSnacks = parseInt(document.getElementById('comediaNoSnacks').value);
+    const familiarSnacks = parseInt(document.getElementById('familiarSnacks').value);
+    const familiarNoSnacks = parseInt(document.getElementById('familiarNoSnacks').value);
+
+    // Crear el objeto con los datos observados
+    const datosObservados = {
+      Accion: { Snacks: accionSnacks, NoSnacks: accionNoSnacks },
+      Comedia: { Snacks: comediaSnacks, NoSnacks: comediaNoSnacks },
+      Familiar: { Snacks: familiarSnacks, NoSnacks: familiarNoSnacks }
+    };
+
+    // Calcular la frecuencia total
+    const totalObservado = Object.values(datosObservados).flatMap(Object.values).reduce((acc, val) => acc + val, 0);
+
+    // Calcular las frecuencias esperadas
+    const frecuenciasEsperadas = {};
+    for (const genero in datosObservados) {
+      frecuenciasEsperadas[genero] = {};
+      const totalSnacks = Object.values(datosObservados[genero])[0] + Object.values(datosObservados[genero])[1];
+      for (const preferencia in datosObservados[genero]) {
+        const proporción = totalSnacks / totalObservado;
+        const frecuenciaEsperada = proporción * Object.values(datosObservados[genero])[0];
+        frecuenciasEsperadas[genero][preferencia] = Math.floor(frecuenciaEsperada);
+      }
+    }
+
+
+    // Calcular la estadística de la prueba de chi-cuadrado
+    const chiCuadrado = Object.entries(datosObservados).flatMap(([genero, preferencias]) => 
+      Object.entries(preferencias).map(([preferencia, observado]) => {
+        const esperado = frecuenciasEsperadas[genero][preferencia];
+        return (observado - esperado)**2 / esperado;
+      })
+    ).reduce((acc, val) => acc + val, 0);
+
+    // Mostrar resultados en la tabla
+    document.getElementById('accionRow').getElementsByTagName('td')[1].innerText = accionSnacks;
+    document.getElementById('accionRow').getElementsByTagName('td')[2].innerText = accionNoSnacks;
+    document.getElementById('accionRow').getElementsByTagName('td')[3].innerText = accionSnacks + accionNoSnacks;
+    document.getElementById('accionRow').getElementsByTagName('td')[4].innerText = frecuenciasEsperadas['Accion']['Snacks'] + frecuenciasEsperadas['Accion']['NoSnacks'];
+
+    document.getElementById('comediaRow').getElementsByTagName('td')[1].innerText = comediaSnacks;
+    document.getElementById('comediaRow').getElementsByTagName('td')[2].innerText = comediaNoSnacks;
+    document.getElementById('comediaRow').getElementsByTagName('td')[3].innerText = comediaSnacks + comediaNoSnacks;
+    document.getElementById('comediaRow').getElementsByTagName('td')[4].innerText = frecuenciasEsperadas['Comedia']['Snacks'] + frecuenciasEsperadas['Comedia']['NoSnacks'];
+
+    document.getElementById('familiarRow').getElementsByTagName('td')[1].innerText = familiarSnacks;
+    document.getElementById('familiarRow').getElementsByTagName('td')[2].innerText = familiarNoSnacks;
+    document.getElementById('familiarRow').getElementsByTagName('td')[3].innerText = familiarSnacks + familiarNoSnacks;
+    document.getElementById('familiarRow').getElementsByTagName('td')[4].innerText = frecuenciasEsperadas['Familiar']['Snacks'] + frecuenciasEsperadas['Familiar']['NoSnacks'];
+
+    document.getElementById('totalObservado').innerText = totalObservado;
+    document.getElementById('totalEsperado').innerText = totalObservado;
+
+    document.getElementById('chiCuadradoResult').innerText = `Estadística de la prueba de Chi-cuadrado: ${chiCuadrado.toFixed(4)}`;
+
+    // Mostrar la tabla de resultados
+    document.getElementById('resultadosTable').style.display = 'table';
+    
+    //asdasdasdasd
+    const valorCritico = 11.0705923484375; // Este valor crítico se calcula con un nivel de significancia de 0.05 y 12 grados de libertad
+    console.log("Valor crítico:", valorCritico);
+
+    //
+    const p = document.createElement("p");
+    
+    if (chiCuadrado > valorCritico) {
+      p.textContent = "Se rechaza la hipótesis nula. Hay evidencia suficiente para afirmar que el consumo de snacks depende del género de la película.";
+      document.body.appendChild(p);
+    } else {
+      p.textContent = "No se rechaza la hipótesis nula.No hay evidencia suficiente para afirmar que el consumo de snacks depende del género de la película.";
+      document.body.appendChild(p);
+    }
+
+    
+    
+    //************************************************************************************************
+    //BASE DE DATOS
+    function guardarEnBaseDeDatos(datos, db) {
+      // Conectar con la base de datos
+      const connection = db.connect();
+
+      // Crear una transacción
+      const transaction = connection.beginTransaction();
+
+      // Guardar `datosObservados`
+      for (const [genero, preferencias] of Object.entries(datosObservados)) {
+        for (const [preferencia, valor] of Object.entries(preferencias)) {
+          // Insertar una nueva fila en la tabla `datosObservados`
+          connection.query(`
+        INSERT INTO datosObservados (genero, preferencia, valor)
+        VALUES (?, ?, ?)`,
+            [genero, preferencia, valor]);
+        }
+      }
+
+      // Guardar `frecuenciasEsperadas`
+      for (const [genero, preferencias] of Object.entries(frecuenciasEsperadas)) {
+        for (const [preferencia, valor] of Object.entries(preferencias)) {
+          // Insertar una nueva fila en la tabla `frecuenciasEsperadas`
+          connection.query(`
+        INSERT INTO frecuenciasEsperadas (genero, preferencia, valor)
+        VALUES (?, ?, ?)`,
+            [genero, preferencia, valor]);
+        }
+      }
+
+      // Confirmar la transacción
+      transaction.commit();
+
+      // Cerrar la conexión con la base de datos
+      connection.close();
+    }
+
+    const db = new sql.Database('localhost:3306/mi_base_de_datos');
+    guardarEnBaseDeDatos(datosObservados, db);
+    guardarEnBaseDeDatos(frecuenciasEsperadas, db);
+
+  //****************************************************************************************************
+  }
+</script>
+
+
+</body>
+</html>
